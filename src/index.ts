@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import app from "./app";
 import Database from "./config/db";
 import { buildMongoUri } from "./config/mongoUri";
+import { disconnectRedis } from "./config/redis";
 // import { createIndexes } from "./config/indexes";
 
 dotenv.config();
@@ -29,11 +30,25 @@ async function bootstrap() {
 
   const shutdown = async (): Promise<void> => {
     console.log("🛑 Graceful shutdown initiated");
+    console.log("🛑 Redis graceful shutdown initiated");
+    await disconnectRedis();
+    // process.e÷xit(0);
     server.close(async () => {
       await Database.disconnect();
       process.exit(0);
     });
   };
+
+
+//   process.on("SIGINT", async () => {
+//     await disconnectRedis();
+//     process.exit(0);
+//   });
+
+//   process.on("SIGTERM", async () => {
+//     await disconnectRedis();
+//     process.exit(0);
+//   });
 
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);

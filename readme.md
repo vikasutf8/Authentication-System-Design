@@ -9,4 +9,6 @@
 - prvent Nosql injection 
  - mongo-sanitize
  - zod validation 
- 
+
+- send mail  -Nodemailer
+- Rate limiting - express-rate-limit/Redis on Email/OTP/Ip -- Fixed Algo
