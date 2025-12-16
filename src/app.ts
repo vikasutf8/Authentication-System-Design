@@ -1,0 +1,23 @@
+import express, { Application } from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import userRoute from "./routes/user.route";
+import bodyParser from "body-parser";
+
+dotenv.config();
+
+const app: Application = express();
+
+app.use(cors());
+app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+
+app.use("/api/v1/users", userRoute);
+
+export default app;
