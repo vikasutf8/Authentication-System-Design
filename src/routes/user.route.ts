@@ -8,6 +8,9 @@ const router = Router();
 // Base: /api/users
 // checking at route level best practice
 router.post("/register", validate(registerUserSchema), tryCatch(UserController.registerUser));
+router.post("/verify/:token", tryCatch(UserController.verifyAccount));
+
+
 
 // router.post("/register", UserController.registerUser);
 // router.get("/:id", UserController.getUserById);

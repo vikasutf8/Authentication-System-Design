@@ -4,7 +4,7 @@ const TOKEN_SECRET = "secret";
 const TOKEN_EXPIRY = 60 * 60 * 24; // 24 hours
 
 class Token {
-  static generateToken = (payload: any) => {
+  static generateToken = () => {
     return crypto.randomBytes(64).toString("hex");
     // const token = crypto.randomBytes(64).toString("hex");
     // const expiry = Date.now() + TOKEN_EXPIRY;

@@ -3,7 +3,7 @@ import { getRedis } from "../config/redis";
 const redis = getRedis();
 const REGISTER_TTL = 60 * 5; // 5 minutes
 export const CacheService = {
-  async set(key: string, value: unknown, ttlSeconds = 60) {
+  async set(key: string, value: unknown, ttlSeconds: number) {
     await redis.set(key, JSON.stringify(value), "EX", ttlSeconds);
   },
 
@@ -37,10 +37,10 @@ export const CacheService = {
   async verify(verifyToken: string): Promise<string> {
     const key = `verify:${verifyToken}`; // example: verify:hajfdhsatrhfdsfashfasdhfa8ort
 
-    const exists = await redis.get(key);
-    if (!exists) {
-      throw new Error("Invalid verification token.");
-    }
+    // const exists = await redis.get(key);
+    // if (!exists) {
+    //   throw new Error("Invalid verification token.");
+    // }
 
     return key;
   },
