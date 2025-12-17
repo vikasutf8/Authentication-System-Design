@@ -1,7 +1,7 @@
 import { Router } from "express";
 import UserController from "../controllers/user.controller";
 import { validate } from "../config/zod";
-import { registerUserSchema } from "../validators/user.validator";
+import { loginUserSchema, registerUserSchema } from "../validators/user.validator";
 import tryCatch from "../middlewares/tryCatch";
 const router = Router();
 
@@ -9,6 +9,7 @@ const router = Router();
 // checking at route level best practice
 router.post("/register", validate(registerUserSchema), tryCatch(UserController.registerUser));
 router.post("/verify/:token", tryCatch(UserController.verifyAccount));
+router.post("/login",validate(loginUserSchema), tryCatch(UserController.loginUser));
 
 
 

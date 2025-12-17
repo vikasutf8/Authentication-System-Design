@@ -26,6 +26,8 @@ class Token {
 
     return decodedPayload;
   };
+
+  
 }
 
 export default Token;

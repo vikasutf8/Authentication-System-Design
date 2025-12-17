@@ -8,6 +8,7 @@ import Password from "../utils/password";
 import Token from "../utils/token";
 import { sendMail } from "../config/sendMail";
 import { renderEmailTemplate } from "../config/renderEmail";
+import OTP from "../utils/otp";
 
 class UserController {
   static registerUser = tryCatch(
@@ -35,10 +36,10 @@ class UserController {
         password: hashedPassword,
       };
       //   tokens :eg :http://localhost:3000/hajfdhsatrhfdsfashfasdhfa8ort
-      const token = Token.generateToken();// create a token
+      const token = Token.generateToken(); // create a token
       //stored in redis
       const tokenKey = await CacheService.verify(token);
-      await CacheService.set(tokenKey, dataToCache,60 * 5); //redis
+      await CacheService.set(tokenKey, dataToCache, 60 * 5); //redis
 
       const verifyUrl = `http://localhost:3000/token/${token}`;
 
@@ -52,18 +53,16 @@ class UserController {
         subject: "Verify your email",
         html,
       });
-//at time of check i set it already  --NO need again
+      //at time of check i set it already  --NO need again
       // await CacheService.set(
       //   `${email}:register-rate-limit:${ip}`,
       //   "true",
       //   60 * 5
       // );
 
-      res
-        .status(201)
-        .json({
-          message: "Verification email sent !! Please verify your Account.",
-        });
+      res.status(201).json({
+        message: "Verification email sent !! Please verify your Account.",
+      });
     }
   );
 
@@ -100,15 +99,89 @@ class UserController {
         password: userData.password,
       });
 
-      res
-        .status(200)
-        .json({
-          message:
-            "Account verified successfully & User registered successfully",
-          user: {_id:newUser._id,name:newUser.name,email:newUser.email},
-        });
+      res.status(200).json({
+        message: "Account verified successfully & User registered successfully",
+        user: { _id: newUser._id, name: newUser.name, email: newUser.email },
+      });
     }
   );
+
+  static loginUser = tryCatch(
+    async (req: Request, res: Response, next: NextFunction) => {
+      // 1. validation
+      const sanitizedBody = sanitize(req.body);
+      const { email, password } = sanitizedBody;
+      // 2. OTP generatee : Rate limiting
+      const ip =
+        req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+        req.socket.remoteAddress ||
+        "unknown";
+
+      await CacheService.loginRateLimiterCheck(email, ip);
+      // 3. check if user exist
+      const existingUser = await UserService.getUserByEmail(email);
+      if (!existingUser) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+
+      // 4. check password
+      if (!(await Password.comparePassword(password, existingUser.password))) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+// 5. generate OTP
+      const otp = OTP.generateOTP(); 
+
+      //6. set OTP in cache for Rate limiting
+      const otpKey = await CacheService.verifyOTP(otp,email);
+      await CacheService.set(otpKey, JSON.stringify(OTP), 60 * 5);
+// 7. send OTP to user
+      const html = await renderEmailTemplate("LoginOTP", {
+        otp,
+      });
+
+      await sendMail({
+        to: email,
+        subject: "Your Login OTP",
+        html,
+      });
+
+      res.status(200).json({
+        message: "OTP sent to your email",
+      });
+    }
+  );
+
+  static verifyOTP = tryCatch(
+    async (req: Request, res: Response, next: NextFunction) => {
+
+      // email; stored ::
+      const { email, otp } = req.body;
+
+      if(!email || !otp){
+        return res.status(400).json({ message: "Please provide email and OTP" });
+      }
+
+      const otpKey = await CacheService.verifyOTP(otp,email);
+
+      const otpData = await CacheService.get(otpKey);
+      if(!otpData){
+        return res.status(400).json({ message: "OTP is invalid" });
+      }
+
+      const otpDataJson = (otpData) as {otp:string};
+      if(!OTP.verifyOTP(otpDataJson.otp,otp)){
+        return res.status(400).json({ message: "OTP is invalid" });
+      }
+
+      await CacheService.del(otpKey);
+
+      //jwt token
+      
+
+      res.status(200).json({
+        message: "OTP verified successfully",
+      });
+    });
 }
 
 export default UserController;
