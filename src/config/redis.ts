@@ -1,13 +1,14 @@
 import Redis from "ioredis";
 
 let redis: Redis | null = null;
-
+// console.log("REDIS_URL", process.env.REDIS_URL);
 const createRedisClient = (): Redis => {
   if (redis) return redis;
-
+  // console.log("REDIS_URL", process.env.REDIS_URL);
   if (process.env.REDIS_URL) {
     // Cloud / Upstash
     redis = new Redis(process.env.REDIS_URL);
+
   } else {
     // Self-hosted
     redis = new Redis({

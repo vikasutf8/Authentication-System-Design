@@ -24,6 +24,7 @@ class UserController {
         "unknown";
 
       await CacheService.check(email, ip);
+      // console.log(await CacheService.check(email, ip))
       const existingUser = await UserService.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already exists" });
@@ -37,16 +38,20 @@ class UserController {
       };
       //   tokens :eg :http://localhost:3000/hajfdhsatrhfdsfashfasdhfa8ort
       const token = Token.generateToken(); // create a token
+      console.log(token,"token");
       //stored in redis
       const tokenKey = await CacheService.verify(token);
+      console.log(tokenKey,"tokenKey");
       await CacheService.set(tokenKey, dataToCache, 60 * 5); //redis
-
+// console.log(await CacheService.set(tokenKey, dataToCache, 60 * 5))
       const verifyUrl = `http://localhost:3000/token/${token}`;
 
-      const html = await renderEmailTemplate("accountVerify", {
+      const html = await renderEmailTemplate("AccountVerify", {
         name,
         verifyUrl,
       });
+
+      console.log(html,"html");
 
       await sendMail({
         to: email,

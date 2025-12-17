@@ -20,11 +20,42 @@ export const CacheService = {
     const key = `register:${email}:${ip}`;
     await redis.del(key);
   },
-  // rapup
+ 
+
+  /* 
+  
+  register
+  
+  
+  Fixed Window Rate Limite::Allow N requests per time window
+  5 login attempts / 5 minutes / email + IP
+
+  
+}
+  */
+ async fixedWindowRateLimiterCheck(email: string, ip: string): Promise<void> {
+  const key = `login:${email}:${ip}`;
+  const limit = 5;
+  const windowSeconds = 5 * 60;
+
+  const count = await redis.incr(key);
+
+  if (count === 1) {
+    // first request → start window
+    await redis.expire(key, windowSeconds);
+  }
+
+  if (count > limit) {
+    throw new Error("Too many login attempts. Try later.");
+  }
+},
+
+  // Simplee Lock/cooldoww limiter--?Only 1 attempt per 5 minutes per (email + IP)
   async check(email: string, ip: string): Promise<void> {
     const key = `${email}:register-rate-limit:${ip}`; // example: user@example.com:register-rate-limit:123.456.789.0
 
     const exists = await redis.get(key);
+    console.log(exists,"exists");
     if (exists) {
       throw new Error("Too many registration attempts. Try later.");
     }
@@ -45,7 +76,11 @@ export const CacheService = {
     return key;
   },
 
-  // login
+ /* 
+  
+lgin
+  
+  */
 
   async loginRateLimiterCheck(email: string, ip: string): Promise<void> {
     const key = `${email}:login-rate-limit:${ip}`; // example: user@example.com:register-rate-limit:123.456.789.0
@@ -65,7 +100,11 @@ export const CacheService = {
     return key;
   },
 
-  /// jwt token
+ /* 
+  
+jwt token
+  
+  */
   async setRefreshToken(userId: string, token: string) {
     await redis.set(
       `refresh-token:${userId}`,
@@ -82,4 +121,143 @@ export const CacheService = {
   async revokeRefreshToken(userId: string) {
     await redis.del(`refresh:${userId}`);
   },
+
+
+
+  /**
+   * 
+   * 
+   * Rate Limiting
+   */
+  async leakyBucketLimiter(
+  email: string,
+  ip: string,
+  capacity = 5,
+  leakRate = 1 // req/sec
+) {
+  const key = `leaky:${email}:${ip}`;
+  const now = Date.now();
+
+  const data = await redis.get(key);
+  let queueSize = 0;
+  let lastLeak = now;
+
+  if (data) {
+    const parsed = JSON.parse(data);
+    queueSize = parsed.queueSize;
+    lastLeak = parsed.lastLeak;
+  }
+
+  const leaked = Math.floor(((now - lastLeak) / 1000) * leakRate);
+  queueSize = Math.max(0, queueSize - leaked);
+
+  if (queueSize >= capacity) {
+    throw new Error("Too many requests. Try later.");
+  }
+
+  queueSize += 1;
+
+  await redis.set(
+    key,
+    JSON.stringify({ queueSize, lastLeak: now }),
+    "EX",
+    3600
+  );
+}
+,
+
+  async tokenBucketLimiter(
+  email: string,
+  ip: string,
+  capacity = 5,
+  refillRate = 1 // tokens per second
+) {
+  const key = `token-bucket:${email}:${ip}`;
+  const now = Date.now();
+
+  const data = await redis.get(key);
+  let tokens = capacity;
+  let lastRefill = now;
+
+  if (data) {
+    const parsed = JSON.parse(data);
+    tokens = parsed.tokens;
+    lastRefill = parsed.lastRefill;
+  }
+
+  const elapsed = (now - lastRefill) / 1000;
+  tokens = Math.min(capacity, tokens + elapsed * refillRate);
+
+  if (tokens < 1) {
+    throw new Error("Too many requests. Try later.");
+  }
+
+  tokens -= 1;
+
+  await redis.set(
+    key,
+    JSON.stringify({ tokens, lastRefill: now }),
+    "EX",
+    3600
+  );
+}
+,async slidingWindowCounterLimiter(
+  email: string,
+  ip: string,
+  limit = 5,
+  windowSeconds = 300
+) {
+  const now = Date.now();
+  const currentWindow = Math.floor(now / (windowSeconds * 1000));
+  const prevWindow = currentWindow - 1;
+
+  const currentKey = `sw-counter:${email}:${ip}:${currentWindow}`;
+  const prevKey = `sw-counter:${email}:${ip}:${prevWindow}`;
+
+  const currentCount = Number(await redis.get(currentKey)) || 0;
+  const prevCount = Number(await redis.get(prevKey)) || 0;
+
+  const elapsed =
+    (now % (windowSeconds * 1000)) / (windowSeconds * 1000);
+
+  const estimatedCount =
+    prevCount * (1 - elapsed) + currentCount;
+
+  if (estimatedCount >= limit) {
+    throw new Error("Too many requests. Try later.");
+  }
+
+  const tx = redis.multi();
+  tx.incr(currentKey);
+  tx.expire(currentKey, windowSeconds * 2);
+  await tx.exec();
+}
+,
+async slidingWindowLogLimiter(
+  email: string,
+  ip: string,
+  limit = 5,
+  windowSeconds = 300
+) {
+  const key = `sw-log:${email}:${ip}`;
+  const now = Date.now();
+  const windowStart = now - windowSeconds * 1000;
+
+  // Remove old requests
+  await redis.zremrangebyscore(key, 0, windowStart);
+
+  // Count requests in window
+  const count = await redis.zcard(key);
+
+  if (count >= limit) {
+    throw new Error("Too many requests. Try later.");
+  }
+
+  // Add current request
+  await redis.zadd(key, now, `${now}`);
+
+  // Set TTL slightly more than window
+  await redis.expire(key, windowSeconds);
+}
+,
 };
