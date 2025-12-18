@@ -26,3 +26,18 @@ Rate limiting restricts how many requests a client can make in a given time wind
 ## Architecture
 
 Client → API Gateway (Rate Limiter) → User Service
+
+## Swagger
+Client
+  ↓
+Swagger UI (/api-docs)
+  ↓
+OpenAPI JSON (generated at runtime)
+  ↓
+Zod Schemas (single source of truth)
+  ↓
+Express Routes
+  ↓
+Validation Middleware
+  ↓
+Controllers

@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import userRoute from "./routes/user.route";
 import bodyParser from "body-parser";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 
 dotenv.config();
 
@@ -17,6 +19,9 @@ app.use(express.json());
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
+
+// Swagger Docs
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/v1/users", userRoute);
 

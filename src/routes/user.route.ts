@@ -3,7 +3,11 @@ import UserController from "../controllers/user.controller";
 import { validate } from "../config/zod";
 import { loginUserSchema, registerUserSchema } from "../validators/user.validator";
 import tryCatch from "../middlewares/tryCatch";
+
+
 const router = Router();
+
+
 
 // Base: /api/users
 // checking at route level best practice
