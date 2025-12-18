@@ -23,7 +23,11 @@ class UserController {
         req.socket.remoteAddress ||
         "unknown";
 
-      await CacheService.check(email, ip);
+      // await CacheService.check(email, ip);
+      // await CacheService.slidingWindowLogLimiter(email, ip);
+      // await CacheService.slidingWindowCounterLimiter(email, ip);\
+      // await CacheService.tokenBucketLimiter(email, ip);
+      await CacheService.leakyBucketLimiter(email, ip);
       // console.log(await CacheService.check(email, ip))
       const existingUser = await UserService.getUserByEmail(email);
       if (existingUser) {

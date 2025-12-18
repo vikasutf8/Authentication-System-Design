@@ -207,21 +207,27 @@ jwt token
   limit = 5,
   windowSeconds = 300
 ) {
+  //how min window size-- 300 *1000 = 300000
   const now = Date.now();
   const currentWindow = Math.floor(now / (windowSeconds * 1000));
   const prevWindow = currentWindow - 1;
-
+ console.log(now,currentWindow,prevWindow,"prevWindow");
   const currentKey = `sw-counter:${email}:${ip}:${currentWindow}`;
   const prevKey = `sw-counter:${email}:${ip}:${prevWindow}`;
 
+  console.log(currentKey,prevKey,"currentKey");
+
   const currentCount = Number(await redis.get(currentKey)) || 0;
   const prevCount = Number(await redis.get(prevKey)) || 0;
+
+  console.log(currentCount,prevCount,"currentCount");
 
   const elapsed =
     (now % (windowSeconds * 1000)) / (windowSeconds * 1000);
 
   const estimatedCount =
     prevCount * (1 - elapsed) + currentCount;
+  console.log(estimatedCount,"estimatedCount");
 
   if (estimatedCount >= limit) {
     throw new Error("Too many requests. Try later.");
@@ -232,6 +238,11 @@ jwt token
   tx.expire(currentKey, windowSeconds * 2);
   await tx.exec();
 }
+
+// 1766029706284 5886765 5886764 prevWindow
+// sw-counter:vikasarya1889@gmail.com:::1:5886765 sw-counter:vikasarya1889@gmail.com:::1:5886764 currentKey
+// 5 0 currentCount
+// 5 estimatedCount
 ,
 async slidingWindowLogLimiter(
   email: string,
@@ -243,6 +254,9 @@ async slidingWindowLogLimiter(
   const now = Date.now();
   const windowStart = now - windowSeconds * 1000;
 
+  console.log(key, now,windowStart,"windowStart");
+  // sw-log:vikasarya1889@gmail.com:::1 1766029233074 1766028933074 windowStart
+  // SORTED SET
   // Remove old requests
   await redis.zremrangebyscore(key, 0, windowStart);
 

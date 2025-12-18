@@ -12,3 +12,17 @@
 
 - send mail  -Nodemailer
 - Rate limiting - express-rate-limit/Redis on Email/OTP/Ip -- Fixed Algo
+
+# Rate Limiting – Node.js + Redis
+
+## Overview
+Rate limiting restricts how many requests a client can make in a given time window to prevent abuse and protect backend services.
+
+**Applied at:** API Gateway  
+**Tech:** Node.js, Redis
+
+---
+
+## Architecture
+
+Client → API Gateway (Rate Limiter) → User Service
