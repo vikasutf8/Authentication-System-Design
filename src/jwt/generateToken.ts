@@ -25,15 +25,20 @@ class JwtService {
   ) ;
   }
 
-  static generateTokens(payload: JwtPayload) {
-    const accessToken = this.generateAccessToken(payload);
-    const refreshToken = this.generateRefreshToken(payload);
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+  static verifyRefreshToken(token: string): string {
+    const secret: Secret = JWT_CONFIG.REFRESH_TOKEN_SECRET;
+    return jwt.verify(token, secret) as string;
   }
+
+  // static generateTokens(payload: JwtPayload) {
+  //   const accessToken = this.generateAccessToken(payload);
+  //   const refreshToken = this.generateRefreshToken(payload);
+
+  //   return {
+  //     accessToken,
+  //     refreshToken,
+  //   };
+  // }
 }
 
 export default JwtService;

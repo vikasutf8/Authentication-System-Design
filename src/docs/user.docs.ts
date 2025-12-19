@@ -57,3 +57,23 @@ registry.registerPath({
     400: { description: "Invalid or expired token" },
   },
 });
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/users/verifyOTP",
+  tags: ["Users"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/VerifyOTP" },
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: { description: "OTP verified" },
+    400: { description: "Invalid OTP" },
+  },
+});

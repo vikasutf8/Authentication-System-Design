@@ -5,6 +5,9 @@ import userRoute from "./routes/user.route";
 import bodyParser from "body-parser";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import cookieParser from "cookie-parser";
+
+
 
 dotenv.config();
 
@@ -15,7 +18,7 @@ app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });

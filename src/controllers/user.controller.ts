@@ -237,6 +237,20 @@ class UserController {
         Email: email,
       });
     });
+
+
+    static userProfile = tryCatch(async (req: any, res: Response, next: NextFunction) => {
+      const { userId ,email } = req.user;
+      // const userKey = await CacheService.setUserKey(userId);
+      // const userData = await CacheService.get(userKey);
+      // if (!userData) {
+      //   res.status(403).json({ message: "Unauthorized: User not found" });
+      //   return;
+      // }
+      res.status(200).json({ userId,email });
+    });
+
+    
 }
 
 export default UserController;

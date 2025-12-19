@@ -27,16 +27,22 @@ import { z } from "../config/zod.config";
 import { registry } from "../config/openapi";
 
 export const registerUserSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  name: z.string().min(2, "Name must be at least 2 characters long"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export const loginUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+});
+
+export const verifyOTPSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  otp: z.string().min(6).max(6, "OTP must be 6 digits"),
 });
 
 // Register schemas for Swagger
 registry.register("RegisterUser", registerUserSchema);
 registry.register("LoginUser", loginUserSchema);
+registry.register("VerifyOTP", verifyOTPSchema);

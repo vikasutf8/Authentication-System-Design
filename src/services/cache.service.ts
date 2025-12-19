@@ -121,14 +121,21 @@ jwt token
   },
 
   async getRefreshToken(userId: string): Promise<string | null> {
-    return redis.get(`refresh:${userId}`);
+    return redis.get(`refresh-token:${userId}`);
   },
 
   async revokeRefreshToken(userId: string) {
-    await redis.del(`refresh:${userId}`);
+    await redis.del(`refresh-token:${userId}`);
   },
 
 
+  /**
+   *  User Set
+   */
+
+  async setUserKey(userId: string) {
+    return `user:${userId}`;
+  },
 
   /**
    * 

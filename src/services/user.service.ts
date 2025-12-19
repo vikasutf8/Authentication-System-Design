@@ -12,6 +12,11 @@ class UserService {
     const user = await UserModel.findOne({ email });
     return user;
   });
+
+  static getUserById = async (id: string) => {
+    const user = await UserModel.findById(id).select("-password");
+    return user;
+  };
 }
 
 export default UserService;
