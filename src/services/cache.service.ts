@@ -105,9 +105,15 @@ lgin
 jwt token
   
   */
-  async setRefreshToken(userId: string, token: string) {
+
+ async generateRefreshTokenkey(userId: string): Promise<string> {
+    const key = `refresh-token:${userId}`;
+    return key;
+  },
+
+  async setRefreshToken(key: string, token: string) {
     await redis.set(
-      `refresh-token:${userId}`,
+      key,
       token,
       "EX", 
       7 * 24 * 60 * 60 // 7 days

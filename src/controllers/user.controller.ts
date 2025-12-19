@@ -9,6 +9,7 @@ import Token from "../utils/token";
 import { sendMail } from "../config/sendMail";
 import { renderEmailTemplate } from "../config/renderEmail";
 import OTP from "../utils/otp";
+import JwtService from "../jwt/generateToken";
 
 class UserController {
   static registerUser = tryCatch(
@@ -174,21 +175,66 @@ class UserController {
 
       const otpData = await CacheService.get(otpKey);
       if(!otpData){
-        return res.status(400).json({ message: "OTP is invalid" });
+        return res.status(400).json({ message: "OTP is invalid !! Retry" });
       }
 
+      console.log(otpData,"otpData");
+      
       const otpDataJson = (otpData) as {otp:string};
       if(!OTP.verifyOTP(otpDataJson.otp,otp)){
-        return res.status(400).json({ message: "OTP is invalid" });
+        return res.status(400).json({ message: "OTP is invalid !!Retry" });
       }
 
       await CacheService.del(otpKey);
 
+      let user = await UserService.getUserByEmail(email);
+      if(!user){
+        return res.status(400).json({ message: "User not found "});
+      }
+      console.log(user,"user");
+
+
       //jwt token
       
+      const accessToken = JwtService.generateAccessToken({
+        userId: user._id.toString(),
+        email: user.email as string,
+      });
+      const refreshToken = JwtService.generateRefreshToken({
+        userId: user._id.toString(),
+        email: user.email as string,
+      });
+
+      const refreshTokenKey = await CacheService.generateRefreshTokenkey(user._id.toString());
+      await CacheService.setRefreshToken(refreshTokenKey, refreshToken);
+
+      // cookies
+
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true, //backend readOnly document.cookie
+        // secure: true, // https working not http
+        sameSite: "strict", // csrf attack here ..backend readOnly
+        maxAge: 15 * 60 * 1000, // 15 min
+      });
+      /**
+       * csrf : cross site request forgery
+       * custom url generate similiar to frontend
+       * 
+       * what if i send to header
+       * XSS attack
+       */
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true, //backend readOnly document.cookie
+        // secure: true, // https working not http
+        sameSite: "strict", // csrf attack here ..backend readOnly
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
 
       res.status(200).json({
         message: "OTP verified successfully",
+        accessToken,
+        Email: email,
       });
     });
 }

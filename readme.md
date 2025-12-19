@@ -1,3 +1,19 @@
+# Architecture : MY Want
+Client
+  |
+Load Balancer (Nginx / ALB)
+  |
+Node.js Cluster (x3)
+  |
+PgBouncer
+  |
+PostgreSQL/MongoDB
+  ├── Primary (Writes)
+  ├── Replica 1 (Reads)
+  └── Replica 2 (Reads)
+
+---
+
 - DB config → URI builder → connection → indexes with dummy env values.
 1. feat(db): add MongoDB connection setup
 2. feat(config): build MongoDB URI from env variables
@@ -23,7 +39,7 @@ Rate limiting restricts how many requests a client can make in a given time wind
 
 ---
 
-## Architecture
+
 
 Client → API Gateway (Rate Limiter) → User Service
 
