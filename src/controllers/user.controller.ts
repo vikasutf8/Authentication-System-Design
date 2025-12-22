@@ -43,12 +43,12 @@ class UserController {
       };
       //   tokens :eg :http://localhost:3000/hajfdhsatrhfdsfashfasdhfa8ort
       const token = Token.generateToken(); // create a token
-      console.log(token,"token");
+      console.log(token, "token");
       //stored in redis
       const tokenKey = await CacheService.verify(token);
-      console.log(tokenKey,"tokenKey");
+      console.log(tokenKey, "tokenKey");
       await CacheService.set(tokenKey, dataToCache, 60 * 5); //redis
-// console.log(await CacheService.set(tokenKey, dataToCache, 60 * 5))
+      // console.log(await CacheService.set(tokenKey, dataToCache, 60 * 5))
       const verifyUrl = `http://localhost:3000/token/${token}`;
 
       const html = await renderEmailTemplate("AccountVerify", {
@@ -56,7 +56,7 @@ class UserController {
         verifyUrl,
       });
 
-      console.log(html,"html");
+      console.log(html, "html");
 
       await sendMail({
         to: email,
@@ -138,13 +138,13 @@ class UserController {
       if (!(await Password.comparePassword(password, existingUser.password))) {
         return res.status(400).json({ message: "Invalid email or password" });
       }
-// 5. generate OTP
-      const otp = OTP.generateOTP(); 
+      // 5. generate OTP
+      const otp = OTP.generateOTP();
 
       //6. set OTP in cache for Rate limiting
-      const otpKey = await CacheService.verifyOTP(otp,email);
+      const otpKey = await CacheService.verifyOTP(otp, email);
       await CacheService.set(otpKey, JSON.stringify(OTP), 60 * 5);
-// 7. send OTP to user
+      // 7. send OTP to user
       const html = await renderEmailTemplate("LoginOTP", {
         otp,
       });
@@ -163,39 +163,39 @@ class UserController {
 
   static verifyOTP = tryCatch(
     async (req: Request, res: Response, next: NextFunction) => {
-
       // email; stored ::
       const { email, otp } = req.body;
 
-      if(!email || !otp){
-        return res.status(400).json({ message: "Please provide email and OTP" });
+      if (!email || !otp) {
+        return res
+          .status(400)
+          .json({ message: "Please provide email and OTP" });
       }
 
-      const otpKey = await CacheService.verifyOTP(otp,email);
+      const otpKey = await CacheService.verifyOTP(otp, email);
 
       const otpData = await CacheService.get(otpKey);
-      if(!otpData){
+      if (!otpData) {
         return res.status(400).json({ message: "OTP is invalid !! Retry" });
       }
 
-      console.log(otpData,"otpData");
-      
-      const otpDataJson = (otpData) as {otp:string};
-      if(!OTP.verifyOTP(otpDataJson.otp,otp)){
+      console.log(otpData, "otpData");
+
+      const otpDataJson = otpData as { otp: string };
+      if (!OTP.verifyOTP(otpDataJson.otp, otp)) {
         return res.status(400).json({ message: "OTP is invalid !!Retry" });
       }
 
       await CacheService.del(otpKey);
 
       let user = await UserService.getUserByEmail(email);
-      if(!user){
-        return res.status(400).json({ message: "User not found "});
+      if (!user) {
+        return res.status(400).json({ message: "User not found " });
       }
-      console.log(user,"user");
-
+      console.log(user, "user");
 
       //jwt token
-      
+
       const accessToken = JwtService.generateAccessToken({
         userId: user._id.toString(),
         email: user.email as string,
@@ -205,7 +205,9 @@ class UserController {
         email: user.email as string,
       });
 
-      const refreshTokenKey = await CacheService.generateRefreshTokenkey(user._id.toString());
+      const refreshTokenKey = await CacheService.generateRefreshTokenkey(
+        user._id.toString()
+      );
       await CacheService.setRefreshToken(refreshTokenKey, refreshToken);
 
       // cookies
@@ -214,12 +216,12 @@ class UserController {
         httpOnly: true, //backend readOnly document.cookie
         // secure: true, // https working not http
         sameSite: "strict", // csrf attack here ..backend readOnly
-        maxAge: 15 * 60 * 1000, // 15 min
+        maxAge: 5 * 60 * 1000, // 5 min
       });
       /**
        * csrf : cross site request forgery
        * custom url generate similiar to frontend
-       * 
+       *
        * what if i send to header
        * XSS attack
        */
@@ -236,21 +238,108 @@ class UserController {
         accessToken,
         Email: email,
       });
-    });
+    }
+  );
 
-
-    static userProfile = tryCatch(async (req: any, res: Response, next: NextFunction) => {
-      const { userId ,email } = req.user;
+  static userProfile = tryCatch(
+    async (req: any, res: Response, next: NextFunction) => {
+      const { userId, email } = req.user;
       // const userKey = await CacheService.setUserKey(userId);
       // const userData = await CacheService.get(userKey);
       // if (!userData) {
       //   res.status(403).json({ message: "Unauthorized: User not found" });
       //   return;
       // }
-      res.status(200).json({ userId,email });
-    });
+      res.status(200).json({ userId, email });
+    }
+  );
 
-    
+  static reGenerateAccessToken = tryCatch(
+    async (req: any, res: Response, next: NextFunction) => {
+      const refreshToken = req.body.refreshToken;
+      if (!refreshToken) {
+        res.status(400).json({ message: "Refresh token is required" });
+        return;
+      }
+      const verifyRefreshToken = JwtService.verifyRefreshToken(refreshToken);
+      console.log(verifyRefreshToken, "verifyRefreshToken");
+      if (!verifyRefreshToken) {
+        res.status(400).json({ message: "Invalid refresh token" });
+        return;
+      }
+
+      const refreshTokenKey = await CacheService.generateRefreshTokenkey(
+        verifyRefreshToken.userId
+      ); 
+      const cacheRefreshToken = await CacheService.getRefreshToken(
+        refreshTokenKey
+      );
+
+      if (!cacheRefreshToken) {
+        res.status(400).json({ message: "Invalid refresh token" });
+        return;
+      }
+      console.log(cacheRefreshToken, "cacheRefreshToken");
+
+      const accessToken = JwtService.generateAccessToken({
+        userId: verifyRefreshToken.userId,
+        email: verifyRefreshToken.email,
+      });
+
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true, //backend readOnly document.cookie
+        // secure: true, // https working not http
+        sameSite: "strict", // csrf attack here ..backend readOnly
+        maxAge: 5 * 60 * 1000, // 15 min
+      });
+
+      res.status(200).json({
+        message: "Access token generated successfully",
+        accessToken,
+      });
+    }
+  );
+
+  static logout = tryCatch(
+    async (req: any, res: Response, next: NextFunction) => {
+      // const refreshToken = req.body.refreshToken;
+      // if (!refreshToken) {
+      //   res.status(400).json({ message: "Refresh token is required" });
+      //   return;
+      // }
+      // const verifyRefreshToken = JwtService.verifyRefreshToken(refreshToken);
+      // console.log(verifyRefreshToken, "verifyRefreshToken");
+      // if (!verifyRefreshToken) {
+      //   res.status(400).json({ message: "Invalid refresh token" });
+      //   return;
+      // }
+
+      // const refreshTokenKey = await CacheService.generateRefreshTokenkey(
+      //   verifyRefreshToken.userId
+      // ); 
+      // const cacheRefreshToken = await CacheService.getRefreshToken(
+      //   refreshTokenKey
+      // );
+
+      // if (!cacheRefreshToken) {
+      //   res.status(400).json({ message: "Invalid refresh token" });
+      //   return;
+      // }
+      // console.log(cacheRefreshToken, "cacheRefreshToken");
+
+      const userId = req.user.userId;
+      
+      await CacheService.revokeRefreshToken(userId);
+      await CacheService.revokeUserKey(userId);
+
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+
+      res.status(200).json({
+        message: "Logout successful",
+      });
+    }
+  );
 }
 
 export default UserController;

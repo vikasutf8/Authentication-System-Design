@@ -25,9 +25,9 @@ class JwtService {
   ) ;
   }
 
-  static verifyRefreshToken(token: string): string {
+  static verifyRefreshToken(refreshToken: string): JwtPayload {
     const secret: Secret = JWT_CONFIG.REFRESH_TOKEN_SECRET;
-    return jwt.verify(token, secret) as string;
+    return jwt.verify(refreshToken, secret) as JwtPayload;
   }
 
   // static generateTokens(payload: JwtPayload) {

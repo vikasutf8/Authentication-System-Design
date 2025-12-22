@@ -137,6 +137,10 @@ jwt token
     return `user:${userId}`;
   },
 
+  async revokeUserKey(userId: string) {
+    await redis.del(`user:${userId}`);
+  },
+
   /**
    * 
    * 
