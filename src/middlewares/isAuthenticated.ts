@@ -71,3 +71,27 @@ export const isAuthenticate = async (
     res.status(400).json({ message: "Invalid access token" });
   }
 };
+
+
+
+export const authorizedUser = async (
+  req: AuthenticatedRequest | any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(403).json({ message: "Unauthorized: User missing" });
+      return;
+    }
+    if(user.role !== "admin"){
+      res.status(403).json({ message: "Unauthorized: User not admin" });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    res.status(400).json({ message: "Invalid user ID" });
+  }
+};

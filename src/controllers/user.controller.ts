@@ -10,6 +10,7 @@ import { sendMail } from "../config/sendMail";
 import { renderEmailTemplate } from "../config/renderEmail";
 import OTP from "../utils/otp";
 import JwtService from "../jwt/generateToken";
+import { generateCSRFToken, revokeCSRFToken } from "../middlewares/crsf";
 
 class UserController {
   static registerUser = tryCatch(
@@ -233,6 +234,10 @@ class UserController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
+      // generate csrf token
+      const csrfToken = await generateCSRFToken(req, res, next, user._id.toString());
+      console.log(csrfToken,"csrfToken");
+
       res.status(200).json({
         message: "OTP verified successfully",
         accessToken,
@@ -332,12 +337,41 @@ class UserController {
       await CacheService.revokeRefreshToken(userId);
       await CacheService.revokeUserKey(userId);
 
+      // also revoke csrf token omn logout
+      await revokeCSRFToken(req, res, next); //!!! check userID
+
+      // at logging out clear cookies
+      res.clearCookie("csrfToken");
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
       res.status(200).json({
         message: "Logout successful",
       });
+    }
+  );
+
+  static regenerateCSRFToken = tryCatch(
+    async (req: any, res: Response, next: NextFunction) => {
+      const userId = (req as any).user?._id?.toString();
+      if (!userId) {
+        return res.status(401).json({ error: "Not Authenticated" });
+      }
+      // generate csrf token
+      const csrfToken = await generateCSRFToken(req, res, next, userId);
+      console.log(csrfToken,"csrfToken");
+
+      res.status(200).json({
+        message: "CSRF token regenerated successfully",
+        csrfToken,
+      });
+    }
+  );
+
+
+  static adminUser = tryCatch(
+    async (req: any, res: Response, next: NextFunction) => {
+     return res.status(200).json({ message: "Admin user created successfully" });
     }
   );
 }

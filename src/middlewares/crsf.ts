@@ -73,6 +73,8 @@ export const revokeCSRFToken = async (req: Request, res: Response, next: NextFun
   const csrfTokenKey = await CacheService.generateCSRFTokenKey(userId);
   await CacheService.del(csrfTokenKey);
   res.clearCookie("csrfToken");
-  next();
+
+  return await generateCSRFToken(req, res, next, userId);
+  // next();
 };
 
