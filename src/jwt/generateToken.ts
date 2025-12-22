@@ -12,14 +12,14 @@ import { JwtPayload, JWT_CONFIG } from "./jwt";
 class JwtService {
   static generateAccessToken(payload: JwtPayload): string {
     const secret: Secret = JWT_CONFIG.ACCESS_TOKEN_SECRET;
-    return jwt.sign(payload as object, secret, {
+    return jwt.sign(payload, secret, {
       expiresIn: JWT_CONFIG.ACCESS_TOKEN_EXPIRY,
     } as SignOptions);
   }
 
-  static generateRefreshToken(payload: JwtPayload): string {
+  static generateRefreshToken(payload: JwtPayload): string {  
     const secret: Secret = JWT_CONFIG.REFRESH_TOKEN_SECRET;
-    return jwt.sign(payload as object, secret, {
+    return jwt.sign(payload, secret, {
       expiresIn: JWT_CONFIG.REFRESH_TOKEN_EXPIRY,
     } as SignOptions
   ) ;

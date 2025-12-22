@@ -11,6 +11,7 @@ import { renderEmailTemplate } from "../config/renderEmail";
 import OTP from "../utils/otp";
 import JwtService from "../jwt/generateToken";
 import { generateCSRFToken, revokeCSRFToken } from "../middlewares/crsf";
+import Session from "../middlewares/session";
 
 class UserController {
   static registerUser = tryCatch(
@@ -195,15 +196,43 @@ class UserController {
       }
       console.log(user, "user");
 
-      //jwt token
+      // session id generate
+      const sessionId = Session.generateSessionId(req, res, next);
+      const activeSessionKey = await CacheService.generateActiveSessionKey(user._id.toString());
+      const sessionKey = await CacheService.generateSessionKey(sessionId); //try to delete this already presnt
 
+      // check if already active session/this logined user present
+      const activeSession = await CacheService.getActiveSession(user._id.toString());
+      if(activeSession){
+
+        await CacheService.revokeActiveSession(user._id.toString());
+        await CacheService.revokeSession(sessionId);
+        await CacheService.revokeRefreshToken(user._id.toString()); //!! check
+        // await CacheService.revokeActiveSession(user._id.toString());
+        // return res.status(400).json({ message: "User already logged in" });
+      }
+
+      const sessionData ={
+        sessionId,
+        userId: user._id.toString(),
+        email: user.email as string,
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+      }
+
+      await CacheService.setActiveSession(activeSessionKey, sessionId);
+      await CacheService.setSession(sessionKey, JSON.stringify(sessionData));
+
+      //jwt token
       const accessToken = JwtService.generateAccessToken({
         userId: user._id.toString(),
         email: user.email as string,
-      });
+        sessionId,
+      }); 
       const refreshToken = JwtService.generateRefreshToken({
         userId: user._id.toString(),
         email: user.email as string,
+        sessionId,
       });
 
       const refreshTokenKey = await CacheService.generateRefreshTokenkey(
@@ -249,13 +278,20 @@ class UserController {
   static userProfile = tryCatch(
     async (req: any, res: Response, next: NextFunction) => {
       const { userId, email } = req.user;
+      const sessionId = req.sessionId;
       // const userKey = await CacheService.setUserKey(userId);
       // const userData = await CacheService.get(userKey);
       // if (!userData) {
       //   res.status(403).json({ message: "Unauthorized: User not found" });
       //   return;
       // }
-      res.status(200).json({ userId, email });
+
+      const sessionData = await CacheService.getSession(sessionId!);
+      if(!sessionData){
+        res.status(403).json({ message: "Unauthorized: Session not found" });
+        return;
+      }
+      res.status(200).json({ userId, email , sessionData });
     }
   );
 
@@ -284,11 +320,32 @@ class UserController {
         res.status(400).json({ message: "Invalid refresh token" });
         return;
       }
-      console.log(cacheRefreshToken, "cacheRefreshToken");
+      // active session check
 
+      const activeSessionKey = await CacheService.getActiveSession(verifyRefreshToken.userId);
+      if(!activeSessionKey){
+        res.status(400).json({ message: "User not logged in" });
+        return;
+      }
+
+      const sessionData = await CacheService.getSession(verifyRefreshToken.sessionId!);
+      if(!sessionData){
+        res.status(400).json({ message: "Session not found" });
+        return;
+      }
+
+      const parsedSessionData = JSON.parse(sessionData);
+      parsedSessionData.lastActivity = new Date().toISOString();
+
+      await CacheService.setSession(verifyRefreshToken.sessionId!, JSON.stringify(parsedSessionData));
+
+
+      // console.log(cacheRefreshToken, "cacheRefreshToken");
+      // const sessionId = Session.generateSessionId(req, res, next);
       const accessToken = JwtService.generateAccessToken({
         userId: verifyRefreshToken.userId,
         email: verifyRefreshToken.email,
+        sessionId : verifyRefreshToken.sessionId,
       });
 
       res.cookie("accessToken", accessToken, {
@@ -333,7 +390,12 @@ class UserController {
       // console.log(cacheRefreshToken, "cacheRefreshToken");
 
       const userId = req.user.userId;
-      
+      const sessionId = CacheService.getActiveSession(userId);
+      await CacheService.revokeActiveSession(userId);
+      const resolvedSessionId = await sessionId;
+      if (resolvedSessionId) {
+        await CacheService.revokeSession(resolvedSessionId);
+      }
       await CacheService.revokeRefreshToken(userId);
       await CacheService.revokeUserKey(userId);
 

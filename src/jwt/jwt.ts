@@ -2,6 +2,7 @@
 export interface JwtPayload {
   userId: string ;
   email: string;
+  sessionId?: string;
 }
 
 export const JWT_CONFIG = {

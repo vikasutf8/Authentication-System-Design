@@ -163,6 +163,54 @@ jwt token
     return redis.get(`csrf-token:${userId}`);
   },
 
+  /**
+   * 
+   * session
+   */
+
+  async generateActiveSessionKey(userId: string): Promise<string> {
+    return `active-session:${userId}`;
+  },
+
+  async setActiveSession(key: string, sessionId: string) {
+    await redis.set(
+      key,
+      sessionId,
+      "EX", 
+      5 * 60 * 1000 // 5 min
+    );
+  },
+
+  async getActiveSession(userId: string): Promise<string | null> {
+    return redis.get(`active-session:${userId}`);
+  },
+
+  async revokeActiveSession(userId: string) {
+    await redis.del(`active-session:${userId}`);
+  },
+  
+  async generateSessionKey(sessionId: string): Promise<string> {
+    return `session:${sessionId}`;
+  },
+
+  async setSession(key: string, sessionData: any) {
+    await redis.set(
+      key,
+      sessionData,
+      "EX", 
+      7 * 24 * 60 * 60 // 7 days
+    );
+  },
+
+  async getSession(sessionId: string): Promise<string | null> {
+    return redis.get(`session:${sessionId}`);
+  },
+
+  async revokeSession(sessionId: string) {
+    await redis.del(`session:${sessionId}`);
+  },
+   
+
 
   /**
    * 

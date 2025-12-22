@@ -3,6 +3,7 @@ import jwt, { JwtPayload as JwtLibPayload } from "jsonwebtoken";
 import { JWT_CONFIG } from "../jwt/jwt";
 import { CacheService } from "../services/cache.service";
 import UserService from "../services/user.service";
+import Session from "./session";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -54,12 +55,25 @@ export const isAuthenticate = async (
       return;
     }
 
-    await CacheService.set(userKey, userData, 60 * 5);
+    const isSessionActive = await Session.isSessionActive(decoded.userId, decoded.sessionId);
+
+    if(!isSessionActive){
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      res.clearCookie("csrfToken"); 
+      res.status(403).json({ message: "Unauthorized: Session not active" });
+    }
+
+    await CacheService.set(userKey, userData, 60 * 5); //set session ID also
     // 3️⃣ Attach user to request
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
+      // sessionId is intentionally omitted – req.user type only allows userId and email
     };
+    // sessionId is intentionally omitted – req.user type only allows userId and email
+
+    req.sessionId = decoded.sessionId;
 
     next();
   } catch (error: any) {
@@ -75,7 +89,7 @@ export const isAuthenticate = async (
 
 
 export const authorizedUser = async (
-  req: AuthenticatedRequest | any,
+  req: any,
   res: Response,
   next: NextFunction
 ) => {
