@@ -141,6 +141,29 @@ jwt token
     await redis.del(`user:${userId}`);
   },
 
+
+  /**
+   * CSRF Token
+   */
+
+   async generateCSRFTokenKey(userId: string): Promise<string> {
+    return `csrf-token:${userId}`;
+  },
+
+  async setCSRFToken(key: string, token: string) {
+    await redis.set(
+      key,
+      token,
+      "EX", 
+      5 * 60 * 1000 // 5 min
+    );
+  },
+
+  async getCSRFToken(userId: string): Promise<string | null> {
+    return redis.get(`csrf-token:${userId}`);
+  },
+
+
   /**
    * 
    * 

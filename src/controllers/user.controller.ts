@@ -289,7 +289,7 @@ class UserController {
       res.cookie("accessToken", accessToken, {
         httpOnly: true, //backend readOnly document.cookie
         // secure: true, // https working not http
-        sameSite: "strict", // csrf attack here ..backend readOnly
+        sameSite: "none", // csrf attack here ..backend readOnly // why none ?
         maxAge: 5 * 60 * 1000, // 15 min
       });
 
