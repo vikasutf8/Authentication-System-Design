@@ -18,7 +18,7 @@ router.post("/login",validate(loginUserSchema), tryCatch(UserController.loginUse
 router.post("/verifyOTP",validate(verifyOTPSchema), tryCatch(UserController.verifyOTP));
 router.get("/profile", isAuthenticate, tryCatch(UserController.userProfile));
 router.post("/regenerateAccessToken", (UserController.reGenerateAccessToken));
-router.post("/logout", tryCatch(UserController.logout));
+router.post("/logout",isAuthenticate, tryCatch(UserController.logout));
 
 
 // router.post("/register", UserController.registerUser);

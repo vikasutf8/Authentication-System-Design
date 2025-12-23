@@ -343,8 +343,10 @@ class UserController {
       // console.log(cacheRefreshToken, "cacheRefreshToken");
 
       const userId = req.user.userId;
-      
-      await CacheService.revokeRefreshToken(userId);
+      const refreshTokenKey = await CacheService.generateRefreshTokenkey(
+        userId
+      );
+      await CacheService.revokeRefreshToken(refreshTokenKey);
       await CacheService.revokeUserKey(userId);
 
       res.clearCookie("accessToken");
