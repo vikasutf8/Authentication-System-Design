@@ -143,7 +143,11 @@ class UserController {
 
       //6. set OTP in cache for Rate limiting
       const otpKey = await CacheService.verifyOTP(otp, email);
-      await CacheService.set(otpKey, JSON.stringify(OTP), 60 * 5);
+      console.log(otpKey, "otpKey");
+      console.log(JSON.stringify(OTP), "JSON.stringify(OTP)");
+
+      
+      await CacheService.setOTP(otpKey, otp);
       // 7. send OTP to user
       const html = await renderEmailTemplate("LoginOTP", {
         otp,
@@ -172,17 +176,19 @@ class UserController {
           .json({ message: "Please provide email and OTP" });
       }
 
-      const otpKey = await CacheService.verifyOTP(otp, email);
+      console.log(email, "email",otp,"otp");
 
-      const otpData = await CacheService.get(otpKey);
+      const otpKey = await CacheService.verifyOTP(otp, email);
+      console.log(otpKey, "otpKey");
+      const otpData = await CacheService.getOTP(otpKey);
+      console.log(otpData, "otpData");
       if (!otpData) {
         return res.status(400).json({ message: "OTP is invalid !! Retry" });
       }
+ console.log(otpData, "otpData");
 
-      console.log(otpData, "otpData");
-
-      const otpDataJson = otpData as { otp: string };
-      if (!OTP.verifyOTP(otpDataJson.otp, otp)) {
+      // const otpDataJson = otpData as string;
+      if (!OTP.verifyOTP(otpData, otp)) {
         return res.status(400).json({ message: "OTP is invalid !!Retry" });
       }
 
@@ -260,10 +266,18 @@ class UserController {
       if (!refreshToken) {
         res.status(400).json({ message: "Refresh token is required" });
         return;
-      }
+      } 
+
+      console.log(refreshToken, "refreshToken");
       const verifyRefreshToken = JwtService.verifyRefreshToken(refreshToken);
-      console.log(verifyRefreshToken, "verifyRefreshToken");
-      if (!verifyRefreshToken) {
+//       console.log(verifyRefreshToken, "verifyRefreshToken");
+//       {
+//   userId: '694a1f7aabd5c0f820993487',
+//   email: 'vikasarya1889@gmail.com',
+//   iat: 1766466837,
+//   exp: 1767071637
+// } verifyRefreshToken
+      if (!verifyRefreshToken.userId) {
         res.status(400).json({ message: "Invalid refresh token" });
         return;
       }
@@ -271,15 +285,16 @@ class UserController {
       const refreshTokenKey = await CacheService.generateRefreshTokenkey(
         verifyRefreshToken.userId
       ); 
+      console.log(refreshTokenKey, "refreshTokenKey");
       const cacheRefreshToken = await CacheService.getRefreshToken(
         refreshTokenKey
       );
+      console.log(cacheRefreshToken, "cacheRefreshToken");
 
       if (!cacheRefreshToken) {
         res.status(400).json({ message: "Invalid refresh token" });
         return;
       }
-      console.log(cacheRefreshToken, "cacheRefreshToken");
 
       const accessToken = JwtService.generateAccessToken({
         userId: verifyRefreshToken.userId,
