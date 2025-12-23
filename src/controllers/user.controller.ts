@@ -148,7 +148,6 @@ class UserController {
       console.log(otpKey, "otpKey");
       console.log(JSON.stringify(OTP), "JSON.stringify(OTP)");
 
-      
       await CacheService.setOTP(otpKey, otp);
       // 7. send OTP to user
       const html = await renderEmailTemplate("LoginOTP", {
@@ -178,7 +177,7 @@ class UserController {
           .json({ message: "Please provide email and OTP" });
       }
 
-      console.log(email, "email",otp,"otp");
+      console.log(email, "email", otp, "otp");
 
       const otpKey = await CacheService.verifyOTP(otp, email);
       console.log(otpKey, "otpKey");
@@ -187,7 +186,7 @@ class UserController {
       if (!otpData) {
         return res.status(400).json({ message: "OTP is invalid !! Retry" });
       }
- console.log(otpData, "otpData");
+      console.log(otpData, "otpData");
 
       // const otpDataJson = otpData as string;
       if (!OTP.verifyOTP(otpData, otp)) {
@@ -203,48 +202,57 @@ class UserController {
       console.log(user, "user");
 
       // session id generate
-      const sessionId = Session.generateSessionId(req, res, next);
-      const activeSessionKey = await CacheService.generateActiveSessionKey(user._id.toString());
+      const sessionId = Session.generateSessionId();
+      console.log(sessionId, "sessionId");
+      const activeSessionKey = await CacheService.generateActiveSessionKey(
+        user._id.toString()
+      );
       const sessionKey = await CacheService.generateSessionKey(sessionId); //try to delete this already presnt
-
+      const refreshTokenKey = await CacheService.generateRefreshTokenkey(
+        user._id.toString()
+      );
+      const csrfTokenKey = await CacheService.generateCSRFTokenKey(
+        user._id.toString()
+      );
       // check if already active session/this logined user present
-      const activeSession = await CacheService.getActiveSession(user._id.toString());
-      if(activeSession){
-
-        await CacheService.revokeActiveSession(user._id.toString());
-        await CacheService.revokeSession(sessionId);
-        await CacheService.revokeRefreshToken(user._id.toString()); //!! check
+      const activeSession = await CacheService.getActiveSession(
+        activeSessionKey
+      );
+      if (activeSession) {
+        await CacheService.revokeActiveSession(activeSessionKey);
+        await CacheService.revokeSession(sessionKey);
+        await CacheService.revokeRefreshToken(refreshTokenKey);
         // await CacheService.revokeActiveSession(user._id.toString());
         // return res.status(400).json({ message: "User already logged in" });
       }
 
-      const sessionData ={
+      const sessionData = {
         sessionId,
         userId: user._id.toString(),
         email: user.email as string,
         createdAt: new Date().toISOString(),
         lastActivity: new Date().toISOString(),
-      }
+      };
 
       await CacheService.setActiveSession(activeSessionKey, sessionId);
-      await CacheService.setSession(sessionKey, JSON.stringify(sessionData));
+      await CacheService.setSession(sessionKey, sessionData);
 
       //jwt token
       const accessToken = JwtService.generateAccessToken({
         userId: user._id.toString(),
         email: user.email as string,
         sessionId,
-      }); 
+      });
       const refreshToken = JwtService.generateRefreshToken({
         userId: user._id.toString(),
         email: user.email as string,
         sessionId,
       });
+      const csrfToken = await generateCSRFToken();
 
-      const refreshTokenKey = await CacheService.generateRefreshTokenkey(
-        user._id.toString()
-      );
       await CacheService.setRefreshToken(refreshTokenKey, refreshToken);
+
+      await CacheService.setCSRFToken(csrfTokenKey, csrfToken);
 
       // cookies
 
@@ -270,13 +278,23 @@ class UserController {
       });
 
       // generate csrf token
-      const csrfToken = await generateCSRFToken(req, res, next, user._id.toString());
-      console.log(csrfToken,"csrfToken");
+
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false, //backend readOnly document.cookie
+        secure: true, // https working not http
+        sameSite: "none", // csrf attack here ..backend readOnly // why none ?
+        maxAge: 5 * 60 * 1000, // 5 min  ->60mi
+      });
+
+      console.log(csrfToken, "csrfToken");
 
       res.status(200).json({
         message: "OTP verified successfully",
-        accessToken,
         Email: email,
+        accessToken,
+        refreshToken,
+        csrfToken,
+        sessionId,
       });
     }
   );
@@ -293,11 +311,11 @@ class UserController {
       // }
 
       const sessionData = await CacheService.getSession(sessionId!);
-      if(!sessionData){
+      if (!sessionData) {
         res.status(403).json({ message: "Unauthorized: Session not found" });
         return;
       }
-      res.status(200).json({ userId, email , sessionData });
+      res.status(200).json({ userId, email, sessionData });
     }
   );
 
@@ -307,17 +325,17 @@ class UserController {
       if (!refreshToken) {
         res.status(400).json({ message: "Refresh token is required" });
         return;
-      } 
+      }
 
       console.log(refreshToken, "refreshToken");
       const verifyRefreshToken = JwtService.verifyRefreshToken(refreshToken);
-//       console.log(verifyRefreshToken, "verifyRefreshToken");
-//       {
-//   userId: '694a1f7aabd5c0f820993487',
-//   email: 'vikasarya1889@gmail.com',
-//   iat: 1766466837,
-//   exp: 1767071637
-// } verifyRefreshToken
+      //       console.log(verifyRefreshToken, "verifyRefreshToken");
+      //       {
+      //   userId: '694a1f7aabd5c0f820993487',
+      //   email: 'vikasarya1889@gmail.com',
+      //   iat: 1766466837,
+      //   exp: 1767071637
+      // } verifyRefreshToken
       if (!verifyRefreshToken.userId) {
         res.status(400).json({ message: "Invalid refresh token" });
         return;
@@ -325,7 +343,7 @@ class UserController {
 
       const refreshTokenKey = await CacheService.generateRefreshTokenkey(
         verifyRefreshToken.userId
-      ); 
+      );
       console.log(refreshTokenKey, "refreshTokenKey");
       const cacheRefreshToken = await CacheService.getRefreshToken(
         refreshTokenKey
@@ -336,31 +354,43 @@ class UserController {
         res.status(400).json({ message: "Invalid refresh token" });
         return;
       }
-
-      const activeSessionKey = await CacheService.getActiveSession(verifyRefreshToken.userId);
-      if(!activeSessionKey){
+      const activeSessionKey = await CacheService.generateActiveSessionKey(
+        verifyRefreshToken.userId
+      );
+      const activeSession = await CacheService.getActiveSession(
+        activeSessionKey
+      );
+      console.log(activeSession,"activeSession");
+      if (!activeSession) {
         res.status(400).json({ message: "User not logged in" });
         return;
       }
-
-      const sessionData = await CacheService.getSession(verifyRefreshToken.sessionId!);
-      if(!sessionData){
+      const sessionKey = await CacheService.generateSessionKey(activeSession);
+      const sessionData = await CacheService.getSession(
+        sessionKey
+      );
+      console.log(sessionData,"sessionData");
+      if (!sessionData) {
         res.status(400).json({ message: "Session not found" });
         return;
       }
 
-      const parsedSessionData = JSON.parse(sessionData);
+    
+      const parsedSessionData = sessionData as any;
       parsedSessionData.lastActivity = new Date().toISOString();
 
-      await CacheService.setSession(verifyRefreshToken.sessionId!, JSON.stringify(parsedSessionData));
-
+      
+      await CacheService.setSession(
+        sessionKey,
+        parsedSessionData
+      );
 
       // console.log(cacheRefreshToken, "cacheRefreshToken");
       // const sessionId = Session.generateSessionId(req, res, next);
       const accessToken = JwtService.generateAccessToken({
         userId: verifyRefreshToken.userId,
         email: verifyRefreshToken.email,
-        sessionId : verifyRefreshToken.sessionId,
+        sessionId: verifyRefreshToken.sessionId,
       });
 
       res.cookie("accessToken", accessToken, {
@@ -393,7 +423,7 @@ class UserController {
 
       // const refreshTokenKey = await CacheService.generateRefreshTokenkey(
       //   verifyRefreshToken.userId
-      // ); 
+      // );
       // const cacheRefreshToken = await CacheService.getRefreshToken(
       //   refreshTokenKey
       // );
@@ -405,11 +435,13 @@ class UserController {
       // console.log(cacheRefreshToken, "cacheRefreshToken");
 
       const userId = req.user.userId;
-      const sessionId = CacheService.getActiveSession(userId);
-      await CacheService.revokeActiveSession(userId);
-      const resolvedSessionId = await sessionId;
-      if (resolvedSessionId) {
-        await CacheService.revokeSession(resolvedSessionId);
+      const sessionId = req.sessionId;
+      const generateActiveSessionKey = await CacheService.generateActiveSessionKey(userId);
+      await CacheService.revokeActiveSession(generateActiveSessionKey);
+    
+      if (sessionId) {
+        const sessionKey = await CacheService.generateSessionKey(sessionId);
+        await CacheService.revokeSession(sessionKey);
       }
       await CacheService.revokeRefreshToken(userId);
       await CacheService.revokeUserKey(userId);
@@ -418,7 +450,7 @@ class UserController {
       await revokeCSRFToken(req, res, next); //!!! check userID
 
       // at logging out clear cookies
-      res.clearCookie("csrfToken");
+      // res.clearCookie("csrfToken");
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
@@ -435,8 +467,18 @@ class UserController {
         return res.status(401).json({ error: "Not Authenticated" });
       }
       // generate csrf token
-      const csrfToken = await generateCSRFToken(req, res, next, userId);
-      console.log(csrfToken,"csrfToken");
+      const csrfToken = await generateCSRFToken();
+      console.log(csrfToken, "csrfToken");
+
+      const csrfTokenKey = await CacheService.generateCSRFTokenKey(userId);
+      await CacheService.setCSRFToken(csrfTokenKey, csrfToken);
+
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false, //backend readOnly document.cookie
+        secure: true, // https working not http
+        sameSite: "none", // csrf attack here ..backend readOnly // why none ?
+        maxAge: 5 * 60 * 1000, // 5 min  ->60mi
+      });
 
       res.status(200).json({
         message: "CSRF token regenerated successfully",
@@ -445,10 +487,11 @@ class UserController {
     }
   );
 
-
   static adminUser = tryCatch(
     async (req: any, res: Response, next: NextFunction) => {
-     return res.status(200).json({ message: "Admin user created successfully" });
+      return res
+        .status(200)
+        .json({ message: "Admin user created successfully" });
     }
   );
 }

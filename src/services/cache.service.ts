@@ -194,12 +194,12 @@ jwt token
     );
   },
 
-  async getActiveSession(userId: string): Promise<string | null> {
-    return redis.get(`active-session:${userId}`);
+  async getActiveSession(key: string): Promise<string | null> {
+    return redis.get(key);
   },
 
-  async revokeActiveSession(userId: string) {
-    await redis.del(`active-session:${userId}`);
+  async revokeActiveSession(key: string) {
+    await redis.del(key);
   },
   
   async generateSessionKey(sessionId: string): Promise<string> {
@@ -215,12 +215,12 @@ jwt token
     );
   },
 
-  async getSession(sessionId: string): Promise<string | null> {
-    return redis.get(`session:${sessionId}`);
+  async getSession(key: string): Promise<string | null> {
+    return redis.get(key);
   },
 
-  async revokeSession(sessionId: string) {
-    await redis.del(`session:${sessionId}`);
+  async revokeSession(key: string) {
+    await redis.del(key);
   },
    
 

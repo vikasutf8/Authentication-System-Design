@@ -2,18 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { CacheService } from "../services/cache.service";
 
-export const generateCSRFToken = async (req: Request, res: Response, next: NextFunction, userId: string) => {
+export const generateCSRFToken = async () => {
   const token = crypto.randomBytes(16).toString("hex");
-  const csrfTokenKey = await CacheService.generateCSRFTokenKey(userId);
-  await CacheService.setCSRFToken(csrfTokenKey, token);
-
-  res.cookie("csrfToken", token, {
-    httpOnly: false, //backend readOnly document.cookie
-    secure: true, // https working not http
-    sameSite: "none", // csrf attack here ..backend readOnly // why none ?
-    maxAge: 5 * 60 * 1000, // 5 min  ->60mi
-  });
-
+ 
 
   return token;
 };
@@ -74,7 +65,7 @@ export const revokeCSRFToken = async (req: Request, res: Response, next: NextFun
   await CacheService.del(csrfTokenKey);
   res.clearCookie("csrfToken");
 
-  return await generateCSRFToken(req, res, next, userId);
+  return await generateCSRFToken();
   // next();
 };
 

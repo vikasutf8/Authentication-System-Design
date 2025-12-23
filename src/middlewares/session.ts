@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { CacheService } from "../services/cache.service";
 
 class Session {
- static generateSessionId(req: Request, res: Response, next: NextFunction) {
+ static generateSessionId() {
   const sessionId = crypto.randomBytes(16).toString("hex");
 //   req.session.id = sessionId;
 //   next();

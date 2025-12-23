@@ -16,7 +16,8 @@ const router = Router();
 router.post("/register", validate(registerUserSchema), tryCatch(UserController.registerUser));
 router.post("/verify/:token", tryCatch(UserController.verifyAccount));
 router.post("/login",validate(loginUserSchema), tryCatch(UserController.loginUser));
-router.post("/verifyOTP",validate(loginUserSchema), tryCatch(UserController.verifyOTP));
+router.post("/verifyOTP",validate(verifyOTPSchema
+), tryCatch(UserController.verifyOTP));
 router.get("/profile", isAuthenticate, tryCatch(UserController.userProfile));
 router.post("/regenerateAccessToken", tryCatch(UserController.reGenerateAccessToken));
 router.post("/logout", isAuthenticate, verifyCSRFToken, tryCatch(UserController.logout));
