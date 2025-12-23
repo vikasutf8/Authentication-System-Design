@@ -1,7 +1,7 @@
 import { Router } from "express";
 import UserController from "../controllers/user.controller";
 import { validate } from "../config/zod";
-import { loginUserSchema, registerUserSchema } from "../validators/user.validator";
+import { loginUserSchema, registerUserSchema, verifyOTPSchema } from "../validators/user.validator";
 import tryCatch from "../middlewares/tryCatch";
 import { authorizedUser, isAuthenticate } from "../middlewares/isAuthenticated";
 import { verifyCSRFToken } from "../middlewares/crsf";

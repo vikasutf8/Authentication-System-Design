@@ -23,7 +23,7 @@ export const isAuthenticate = async (
       req.cookies?.accessToken ||
       req.headers.authorization?.split(" ")[1];
       // its should be at cookie not header >> it set cookiest "accessToken"
-
+    console.log(token,"token");
     if (!token) {
       res.status(403).json({ message: "Unauthorized: Token missing" });
       return;

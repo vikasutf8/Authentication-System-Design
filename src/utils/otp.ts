@@ -10,9 +10,10 @@ class OTP {
     return otp.toString().padStart(length, "0");
   }
 
-  static verifyOTP(otp: string, otpToVerify: string): boolean {
-    const otpInt = parseInt(otp);
-    return otpInt >= 0 && otpInt < Math.pow(10, length) && otp === otpToVerify;
+  static verifyOTP(otp: string | number, otpToVerify: string | number): boolean { // ?? here is reverse
+    console.log(otp,otpToVerify)
+    const otpInt = parseInt(otp.toString());
+    return otpInt >= 0 && otpInt < Math.pow(10, length) && otp === otpToVerify.toString();
   }
 }
 

@@ -100,6 +100,19 @@ lgin
     return key;
   },
 
+  async getOTP(key: string): Promise<string | null> {
+    return redis.get(key);
+  },
+
+
+  async setOTP(key: string, otp: string) {
+    await redis.set(
+      key,
+      otp,
+      "EX", 
+      5 * 60 * 1000 // 5 min
+    );
+  },
  /* 
   
 jwt token
@@ -120,12 +133,12 @@ jwt token
     );
   },
 
-  async getRefreshToken(userId: string): Promise<string | null> {
-    return redis.get(`refresh-token:${userId}`);
+  async getRefreshToken(key: string): Promise<string | null> {
+    return redis.get(key);
   },
 
-  async revokeRefreshToken(userId: string) {
-    await redis.del(`refresh-token:${userId}`);
+  async revokeRefreshToken(key: string) {
+    await redis.del(key);
   },
 
 
