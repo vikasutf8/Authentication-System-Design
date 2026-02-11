@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import userRoute from "./routes/user.route";
 import accountRoute from "./routes/account.route";
+import transactionRoute from "./routes/transaction.route";
 import bodyParser from "body-parser";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
@@ -30,5 +31,6 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/accounts", accountRoute);
+app.use("/api/v1/transactions", transactionRoute);
 
 export default app;
