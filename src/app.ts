@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import userRoute from "./routes/user.route";
+import accountRoute from "./routes/account.route";
 import bodyParser from "body-parser";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
@@ -28,5 +29,6 @@ app.get("/health", (req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/v1/users", userRoute);
+app.use("/api/v1/accounts", accountRoute);
 
 export default app;
