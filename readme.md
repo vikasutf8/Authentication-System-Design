@@ -57,3 +57,26 @@ Express Routes
 Validation Middleware
   ↓
 Controllers
+
+
+## Banking System Added for Payment and Transaction processing
+
+
+### Account Management
+- Account Creation  ~~ Users 
+-  TODO : Specific UserRole -Employee | Stakeholder having  account onlyu ==Future Scope
+
+### Transaction Management
+
+- Transaction Creation -Ledger system
+from - Account
+to - Account
+amount - Amount
+idem-potent - true/false -key
+status - pending/success/failed
+
+
+- Transaction History -Ledger system
+from - Account
+amount - Amount
+tnx-type - credit/debit
