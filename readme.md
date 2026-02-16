@@ -75,6 +75,8 @@ amount - Amount
 idem-potent - true/false -key
 status - pending/success/failed
 
+## Validation Missing on tokens and cookies
+
 
 - Transaction History -Ledger system
 from - Account
