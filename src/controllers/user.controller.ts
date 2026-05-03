@@ -137,7 +137,7 @@ class UserController {
       }
 
       // 4. check password
-      if (!(await Password.comparePassword(password, existingUser.password))) {
+      if (!(await Password.comparePassword(password, existingUser.password!))) {
         return res.status(400).json({ message: "Invalid email or password" });
       }
       // 5. generate OTP

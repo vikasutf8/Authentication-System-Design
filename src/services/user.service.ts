@@ -1,6 +1,5 @@
 import UserModel, { IUser } from "../models/user.model";
-import tryCatch from "../middlewares/tryCatch";
-import { CacheService } from "./cache.service";
+
 
 class UserService {
   static registerUser = async ({ name, email, password }: any) => {
