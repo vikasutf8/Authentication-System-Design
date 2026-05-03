@@ -82,3 +82,58 @@ status - pending/success/failed
 from - Account
 amount - Amount
 tnx-type - credit/debit
+
+
+
+```
+
+src/
+├── app.ts
+├── server.ts
+│
+├── config/
+│   ├── db.ts                     # Prisma client singleton
+│   ├── redis.ts                  # Redis client singleton
+│   ├── env.ts                    # all env vars typed + validated
+│   ├── oauth.config.ts           # GitHub, Google, LinkedIn provider URLs
+│   └── clients.config.ts         # registered SSO client apps
+│
+├── constants/
+│   ├── auth.constants.ts         # token TTLs, cookie names, error codes
+│   └── providers.constants.ts    # provider names enum
+│
+├── models/
+│   └── user.model.ts             # Prisma schema / Mongoose model
+│
+├── routes/
+│   ├── user.routes.ts            # JWT — register/login/logout
+│   ├── oauth.routes.ts           # OAuth2 — /auth/:provider/callback
+│   └── oidc.routes.ts            # SSO — /oidc/authorize /oidc/token
+│
+├── controllers/
+│   ├── user.controller.ts        # JWT controller
+│   ├── oauth.controller.ts       # OAuth2 + OIDC social login
+│   └── oidc.controller.ts        # SSO authorize/token/userinfo
+│
+├── services/
+│   ├── auth.service.ts           # JWT issue/verify + bcrypt
+│   ├── oauth.service.ts          # code exchange + profile fetch
+│   ├── sso.session.service.ts    # Redis SSO session CRUD
+│   └── session.service.ts        # single session version (Redis+DB)
+│
+├── middlewares/
+│   ├── isAuthenticated.ts        # JWT verify + sessionVersion check
+│   ├── ssoSession.middleware.ts  # read SSO cookie from Redis
+│   ├── authorizedUser.ts         # role check
+│   ├── tryCatch.ts               # async error wrapper
+│   └── csrf.ts                   # CSRF token verify
+│
+├── helpers/
+│   ├── token.helper.ts           # sign/decode/verify JWT wrappers
+│   ├── cookie.helper.ts          # set/clear cookie helpers
+│   └── state.helper.ts           # OAuth state store (in-memory Map)
+│
+└── validators/
+    └── user.validator.ts         # zod schemas
+
+    ```
