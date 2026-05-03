@@ -3,7 +3,10 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string;
+  oauthProvider?: "github" | "google" | "linkedin";
+  oauthId?: string;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
   role: string;
@@ -19,7 +22,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
+      required: false, // Nullable for OAuth users
     },
     name: {
       type: String,
@@ -28,9 +31,36 @@ const UserSchema = new Schema<IUser>(
     role:{
         type: String,
         default: "user",
+    },
+    oauthProvider: {
+      type: String,
+      enum: ["github", "google", "linkedin"],
+      required: false,
+    },
+    oauthId: {
+      type: String,
+      required: false,
+    },
+    isVerified :{
+      type: Boolean,
+      default: false,
     }
   },
   { timestamps: true }
 );
 
 export default mongoose.model<IUser>("User", UserSchema);
+
+/**
+ * 
+ * model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  password      String?       // nullable — OAuth users have no password
+  avatar        String?
+  oauthProvider String?       // "github" | "google" | "linkedin"
+  oauthId       String?       // provider's user ID
+  isVerified    Boolean  @default(false)
+}
+ */

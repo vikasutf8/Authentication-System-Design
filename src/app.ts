@@ -8,6 +8,7 @@ import bodyParser from "body-parser";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import cookieParser from "cookie-parser";
+import oauthRoutes from "./routes/oauth.routes";
 
 
 
@@ -32,5 +33,6 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/accounts", accountRoute);
 app.use("/api/v1/transactions", transactionRoute);
+app.use("/api/v2/auth", oauthRoutes);
 
 export default app;
