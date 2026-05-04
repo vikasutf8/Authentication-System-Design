@@ -112,12 +112,12 @@ src/
 │
 ├── controllers/
 │   ├── user.controller.ts        # JWT controller
-│   ├── oauth.controller.ts       # OAuth2 + OIDC social login 
+│   ├── oauth.controller.ts       # OAuth2 + OIDC social login  --done
 │   └── oidc.controller.ts        # SSO authorize/token/userinfo
 │
 ├── services/
 │   ├── auth.service.ts           # JWT issue/verify + bcrypt
-│   ├── oauth.service.ts          # code exchange + profile fetch
+│   ├── oauth.service.ts          # code exchange + profile fetch. --done
 │   ├── sso.session.service.ts    # Redis SSO session CRUD
 │   └── session.service.ts        # single session version (Redis+DB)
 │

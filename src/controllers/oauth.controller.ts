@@ -27,16 +27,19 @@ class OAuthController {
 
     const state = crypto.randomBytes(16).toString("hex");
     oauthStateStore.set(state, Date.now() + OAUTH_STATE_EXPIRY);
-
+// ["hkjlfasdhfakjsdhfas", 1697055600000]
     const url = buildAuthUrl(provider, state);
-    res.redirect(url);
+      
+// /https://accounts.google.com/o/oauth2/v2/auth?client_id=google-client-id
+    res.redirect(url); // authentizatiuon server
   };
 
   // GET /auth/:provider/callback
   // GitHub/Google redirects here with ?code=...&state=...
   handleCallback = async (req: Request, res: Response) => {
-    const provider = req.params.provider as ProviderKey;
+    const provider = req.params.provider as ProviderKey;//google 
     const { code, state } = req.query as { code: string; state: string };
+    //what is code here ...
 
     // Validate state (CSRF protection)
     const expiry = oauthStateStore.get(state);

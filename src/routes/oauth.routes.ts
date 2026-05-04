@@ -12,3 +12,14 @@ router.get("/:provider", tryCatch(oauthController.redirectToProvider));
 router.get("/:provider/callback", tryCatch(oauthController.handleCallback));
 
 export default router;
+
+
+/*
+
+
+
+
+flow paths :
+1. User clicks "Login with GitHub" → GET /api/v2/auth/github → redirect to GitHub --> resource owner on webpage [client]
+
+*/

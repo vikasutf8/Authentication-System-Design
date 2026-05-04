@@ -2,7 +2,8 @@
 
 // import axios from "axios";
 import jwt from "jsonwebtoken";
-import { OAUTH_PROVIDERS, ProviderKey } from "../config/oauth";
+import { OAUTH_PROVIDERS, } from "../config/oauth";
+import { ProviderKey } from "../constant/providers.constants";
 // import { db } from "../config/db"; // your DB client
 import axios from "axios";
 import UserModel, { IUser } from "../models/user.model";
@@ -19,6 +20,7 @@ interface OAuthProfile {
 
 // Step A: Build redirect URL
 export function buildAuthUrl(provider: ProviderKey, state: string): string {
+  //google,"hkjlfasdhfakjsdhfas"
   const config = OAUTH_PROVIDERS[provider];
   const redirectUri = `${process.env.BASE_URL}/auth/${provider}/callback`;
 
@@ -28,11 +30,20 @@ export function buildAuthUrl(provider: ProviderKey, state: string): string {
     scope: config.scope,
     response_type: "code",
     state,
+
   });
 
+  /**
+   * what paraams
+   * client id:  process.env.GOOGLE_CLIENT_ID!
+   * redirect_uri: http://localhost:3000/auth/google/callback
+   * scope: "openid email profile",
+   * response_type: "code",
+   * state : "hkjlfasdhfakjsdhfas"`
+   */
   console.log(config,"---", redirectUri, "---", params.toString());
   
-
+// /https://accounts.google.com/o/oauth2/v2/auth?client_id=google-client-id&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback&scope=openid+email+profile&response_type=code&state=hkjlfasdhfakjsdhfas
   return `${config.authorizeUrl}?${params.toString()}`;
 }
 
@@ -113,6 +124,8 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
     where: { oauthProvider: profile.provider, oauthId: profile.providerId },
   });
 
+  console.log(user,"---user---oauthservice");
+
   if (!user) {
     // Check if email already exists (user registered normally before)
     user = await userModel.findOne({ where: { email: profile.email } });
@@ -121,7 +134,7 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
       // Link provider to existing account
       await userModel.findOneAndUpdate({
         where: { email: profile.email },
-        data: { oauthProvider: profile.provider, oauthId: profile.providerId },
+        data: { oauthProvider: profile.provider, oauthId: profile.providerId ,sessionVersion: user.sessionVersion + 1}, // increment sessionVersion to invalidate existing sessions
       });
     } else {
       // New user — create
@@ -131,6 +144,7 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
         oauthProvider: profile.provider,
         oauthId: profile.providerId,
         isVerified: true, // consider OAuth emails as verified
+        sessionVersion: 1,
       });
     }
   }
