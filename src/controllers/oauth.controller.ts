@@ -9,7 +9,8 @@ import {
   fetchProfile,
   upsertOAuthUser,
 } from "../services/oauth.service";
-import { ProviderKey, OAUTH_PROVIDERS } from "../config/oauth";
+import {  OAUTH_PROVIDERS } from "../config/oauth";
+import { ProviderKey } from "../constant/providers.constants";
 
 const oauthStateStore = new Map<string, number>(); // state → expiry timestamp
 const OAUTH_STATE_EXPIRY = parseInt(process.env.OAUTH_STATE_EXPIRY!); // 1 hour

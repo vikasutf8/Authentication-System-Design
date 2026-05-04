@@ -14,6 +14,7 @@ import { generateCSRFToken, revokeCSRFToken } from "../middlewares/crsf";
 import Session from "../middlewares/session";
 
 class UserController {
+  
   static registerUser = tryCatch(
     async (req: Request, res: Response, next: NextFunction) => {
       // const {name,email,password} = sanitize(req.body);

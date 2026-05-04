@@ -10,6 +10,7 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   role: string;
+  sessionVersion: number;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -44,7 +45,11 @@ const UserSchema = new Schema<IUser>(
     isVerified :{
       type: Boolean,
       default: false,
-    }
+    },
+    sessionVersion: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );
@@ -62,5 +67,6 @@ export default mongoose.model<IUser>("User", UserSchema);
   oauthProvider String?       // "github" | "google" | "linkedin"
   oauthId       String?       // provider's user ID
   isVerified    Boolean  @default(false)
+  sessionVersion Int      @default(1)
 }
  */

@@ -95,24 +95,24 @@ src/
 │   ├── db.ts                     # Prisma client singleton
 │   ├── redis.ts                  # Redis client singleton
 │   ├── env.ts                    # all env vars typed + validated
-│   ├── oauth.config.ts           # GitHub, Google, LinkedIn provider URLs
-│   └── clients.config.ts         # registered SSO client apps
-│
+│   ├── oauth.config.ts           # GitHub, Google, LinkedIn provider URLs -done
+│   └── clients.config.ts         # registered SSO client apps. -done
+│ 
 ├── constants/
 │   ├── auth.constants.ts         # token TTLs, cookie names, error codes
-│   └── providers.constants.ts    # provider names enum
+│   └── providers.constants.ts    # provider names enum. -done
 │
 ├── models/
 │   └── user.model.ts             # Prisma schema / Mongoose model
 │
 ├── routes/
 │   ├── user.routes.ts            # JWT — register/login/logout
-│   ├── oauth.routes.ts           # OAuth2 — /auth/:provider/callback
+│   ├── oauth.routes.ts           # OAuth2 — /auth/:provider/callback -done
 │   └── oidc.routes.ts            # SSO — /oidc/authorize /oidc/token
 │
 ├── controllers/
 │   ├── user.controller.ts        # JWT controller
-│   ├── oauth.controller.ts       # OAuth2 + OIDC social login
+│   ├── oauth.controller.ts       # OAuth2 + OIDC social login 
 │   └── oidc.controller.ts        # SSO authorize/token/userinfo
 │
 ├── services/
